@@ -1,7 +1,5 @@
 package xyz.xfqlittlefan.notdeveloper.xposed
 
-import android.content.ContentResolver
-import android.provider.Settings
 import android.util.Log
 import androidx.annotation.Keep
 import de.robv.android.xposed.IXposedHookLoadPackage
@@ -11,21 +9,20 @@ import de.robv.android.xposed.XSharedPreferences
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
-import xyz.xfqlittlefan.notdeveloper.ADB_ENABLED
-import xyz.xfqlittlefan.notdeveloper.ADB_WIFI_ENABLED
 import xyz.xfqlittlefan.notdeveloper.BuildConfig
-import xyz.xfqlittlefan.notdeveloper.DEVELOPMENT_SETTINGS_ENABLED
+import java.util.*
 
 @Keep
 class Hook : IXposedHookLoadPackage {
-    private val tag = "NotDeveloper"
+    private val TAG = "TimeModifier"
+    private val customTime = Calendar.getInstance()
 
     override fun handleLoadPackage(lpparam: LoadPackageParam) {
         if (lpparam.packageName.startsWith("android") || lpparam.packageName.startsWith("com.android")) {
             return
         }
 
-        Log.i(tag, "processing " + lpparam.packageName)
+        XposedBridge.log("$TAG: processing " + lpparam.packageName)
 
         if (lpparam.packageName == BuildConfig.APPLICATION_ID) {
             XposedHelpers.findAndHookMethod(
@@ -36,153 +33,77 @@ class Hook : IXposedHookLoadPackage {
                     override fun beforeHookedMethod(param: MethodHookParam) {
                         param.result = true
                     }
-                },
+                }
             )
-        }
-
-        val prefs = XSharedPreferences(BuildConfig.APPLICATION_ID)
-
-        val newApiCallback = object : XC_MethodHook() {
-            override fun beforeHookedMethod(param: MethodHookParam) {
-                prefs.reload()
-                hookResultToZero(
-                    lpparam,
-                    prefs,
-                    param,
-                    DEVELOPMENT_SETTINGS_ENABLED,
-                    ADB_ENABLED,
-                    ADB_WIFI_ENABLED
-                )
-            }
-        }
-
-        val oldApiCallback = object : XC_MethodHook() {
-            override fun beforeHookedMethod(param: MethodHookParam) {
-                prefs.reload()
-                hookResultToZero(lpparam, prefs, param, DEVELOPMENT_SETTINGS_ENABLED, ADB_ENABLED)
-            }
-        }
-
-        XposedHelpers.findAndHookMethod(
-            Settings.Global::class.java,
-            "getInt",
-            ContentResolver::class.java,
-            String::class.java,
-            Int::class.java,
-            newApiCallback,
-        )
-
-        XposedHelpers.findAndHookMethod(
-            Settings.Global::class.java,
-            "getInt",
-            ContentResolver::class.java,
-            String::class.java,
-            newApiCallback,
-        )
-
-        XposedHelpers.findAndHookMethod(
-            Settings.Secure::class.java,
-            "getInt",
-            ContentResolver::class.java,
-            String::class.java,
-            Int::class.java,
-            oldApiCallback,
-        )
-
-        XposedHelpers.findAndHookMethod(
-            Settings.Secure::class.java,
-            "getInt",
-            ContentResolver::class.java,
-            String::class.java,
-            oldApiCallback,
-        )
-
-        if (prefs.getBoolean(ADB_ENABLED, true)) {
-            hideSystemProps(lpparam)
-        }
-    }
-
-    private fun hideSystemProps(lpparam: LoadPackageParam) {
-        val clazz = XposedHelpers.findClassIfExists(
-            "android.os.SystemProperties", lpparam.classLoader
-        )
-
-        if (clazz == null) {
-            XposedBridge.log("$tag: props cannot find SystemProperties class")
             return
         }
 
-        val ffsReady = "sys.usb.ffs.ready"
-        val usbState = "sys.usb.state"
-        val usbConfig = "sys.usb.config"
-        val rebootFunc = "persist.sys.usb.reboot.func"
-        val svcadbd= "init.svc.adbd"
-        val methodGet = "get"
-        val methodGetProp = "getprop"
-        val methodGetBoolean = "getBoolean"
-        val methodGetInt = "getInt"
-        val methodGetLong = "getLong"
-        val overrideAdb = "mtp"
-        val overridesvcadbd = "stopped"
+        val prefs = XSharedPreferences(BuildConfig.APPLICATION_ID, "time_modifier_prefs")
+        if (!prefs.file.canRead()) {
+            XposedBridge.log("$TAG: Cannot read preferences file. Make sure it's created with MODE_WORLD_READABLE")
+            return
+        }
 
-        listOf(methodGet, methodGetProp, methodGetBoolean, methodGetInt, methodGetLong).forEach {
-            XposedBridge.hookAllMethods(
-                clazz, it,
-                object : XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
-                        val arg = param.args[0] as String
-                        Log.i(
-                            tag,
-                            "processing ${param.method.name} from ${lpparam.packageName} with arg $arg"
-                        )
+        val customTimeMillis = prefs.getLong("custom_time_millis", 0)
+        if (customTimeMillis <= 0) {
+            XposedBridge.log("$TAG: No custom time set, skipping hooks for ${lpparam.packageName}")
+            return
+        }
 
-                        if (arg != ffsReady && param.method.name != methodGet) {
-                            XposedBridge.log("$tag: props processed ${param.method.name} from ${lpparam.packageName} receiving invalid arg $arg")
-                            return
-                        }
-
-                        when (arg) {
-                            ffsReady -> {
-                                when (param.method.name) {
-                                    methodGet -> param.result = "0"
-                                    methodGetProp -> param.result = "0"
-                                    methodGetBoolean -> param.result = false
-                                    methodGetInt -> param.result = 0
-                                    methodGetLong -> param.result = 0L
-                                }
-                            }
-
-                            usbState -> param.result = overrideAdb
-                            usbConfig -> param.result = overrideAdb
-                            rebootFunc -> param.result = overrideAdb
-                            svcadbd -> param.result = overridesvcadbd
-                            
-                        }
-
-                        Log.i(tag, "hooked ${param.method.name}($arg): ${param.result}")
-                    }
+	val roundedTimeMillis = (customTimeMillis / 1000) * 1000 // Arrotonda a secondi interi
+	customTime.timeInMillis = roundedTimeMillis
+	XposedBridge.log("$TAG: Using custom time: ${customTime.time} for ${lpparam.packageName}")
+        
+        // Hook System.currentTimeMillis()
+        XposedHelpers.findAndHookMethod(
+            "java.lang.System",
+            lpparam.classLoader,
+            "currentTimeMillis",
+            object : XC_MethodHook() {
+                override fun afterHookedMethod(param: MethodHookParam) {
+                    prefs.reload()
+                    val currentCustomTimeMillis = prefs.getLong("custom_time_millis", customTimeMillis)
+                    param.result = roundedTimeMillis
                 }
-            )
-        }
-    }
-
-    private fun hookResultToZero(
-        lpparam: LoadPackageParam,
-        preferences: XSharedPreferences,
-        param: MethodHookParam,
-        vararg keys: String
-    ) {
-        val arg = param.args[1] as String
-        Log.i(tag, "processing ${param.method.name} from ${lpparam.packageName} with arg $arg")
-
-        keys.forEach { key ->
-            if (preferences.getBoolean(key, true) && arg == key) {
-                param.result = 0
-                Log.i(tag, "hooked ${param.method.name}($arg): ${param.result}")
-                return
             }
-        }
+        )
 
-        XposedBridge.log("$tag: processed ${param.method.name} without changing result")
+        val dateClass = XposedHelpers.findClass("java.util.Date", lpparam.classLoader)
+        XposedBridge.hookAllConstructors(dateClass, object : XC_MethodHook() {
+            override fun afterHookedMethod(param: MethodHookParam) {
+                prefs.reload()
+                val currentCustomTimeMillis = prefs.getLong("custom_time_millis", customTimeMillis)
+                XposedHelpers.callMethod(param.thisObject, "setTime", currentCustomTimeMillis)
+            }
+        })
+        
+        XposedHelpers.findAndHookMethod(
+            "java.util.Date",
+            lpparam.classLoader,
+            "getTime",
+            object : XC_MethodHook() {
+                override fun afterHookedMethod(param: MethodHookParam) {
+                    prefs.reload()
+                    val currentCustomTimeMillis = prefs.getLong("custom_time_millis", customTimeMillis)
+                    param.result = roundedTimeMillis
+                }
+            }
+        )
+        
+        // Hook Calendar.getInstance()
+        XposedHelpers.findAndHookMethod(
+            "java.util.Calendar",
+            lpparam.classLoader,
+            "getInstance",
+            object : XC_MethodHook() {
+                override fun afterHookedMethod(param: MethodHookParam) {
+                    prefs.reload()
+                    val currentCustomTimeMillis = prefs.getLong("custom_time_millis", customTimeMillis)
+                    val calendar = param.result as Calendar
+                    calendar.timeInMillis = roundedTimeMillis
+                    param.result = calendar
+                }
+            }
+        )
     }
 }
