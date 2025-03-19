@@ -11,24 +11,24 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IAmNotADeveloper"
         android:windowSoftInputMode="adjustResize">
-        <activity
-            android:name=".ui.activities.MainActivity"
-            android:exported="true"
+	<activity
+    	    android:name=".MainActivity"
+    	    android:exported="true"
             android:theme="@style/Theme.IAmNotADeveloper">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+    	    <intent-filter>
+            	<action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
+            	<category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="de.robv.android.xposed.category.MODULE_SETTINGS" />
-            </intent-filter>
-        </activity>
+    	    </intent-filter>
+	</activity>
 
         <meta-data
             android:name="xposedmodule"
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="GitHub @xfqwdsj" />
+            android:value="Spoof version and versioncode" />
         <meta-data
             android:name="xposedminversion"
             android:value="93" />
