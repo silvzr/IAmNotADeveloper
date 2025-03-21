@@ -107,6 +107,35 @@
             android:textOff=""/>
     </LinearLayout>
 
+    <LinearLayout
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:orientation="horizontal"
+    	android:gravity="center_vertical"
+    	android:layout_marginBottom="16dp">
+
+    	<TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sblocca Spotify Premium"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:layout_marginEnd="8dp"/>
+
+    	<Space
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+    	<ToggleButton
+            android:id="@+id/spotifyPatchToggle"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:background="@drawable/toggle_selector"
+            android:textOn=""
+            android:textOff=""/>
+    </LinearLayout>
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"

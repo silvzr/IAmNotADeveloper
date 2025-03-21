@@ -15,6 +15,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var versionCodeEdit: EditText
     private lateinit var versionNameToggle: ToggleButton
     private lateinit var versionCodeToggle: ToggleButton
+    private lateinit var spotifyPatchToggle: ToggleButton
     private lateinit var statusText: TextView
     
     // Pattern per validare il versionName: X.Y.ZZ.AAA
@@ -32,6 +33,7 @@ class MainActivity : AppCompatActivity() {
         versionCodeEdit = findViewById(R.id.versionCodeEdit)
         versionNameToggle = findViewById(R.id.versionNameToggle)
         versionCodeToggle = findViewById(R.id.versionCodeToggle)
+        spotifyPatchToggle = findViewById(R.id.spotifyPatchToggle)
         statusText = findViewById(R.id.statusText)
         
         // Carica la configurazione salvata
@@ -50,7 +52,8 @@ class MainActivity : AppCompatActivity() {
                 PreferencesHelper.saveModuleConfig(
                     this, 
                     "", 
-                    if (versionCodeToggle.isChecked) versionCodeEdit.text.toString() else ""
+                    if (versionCodeToggle.isChecked) versionCodeEdit.text.toString() else "",
+                    spotifyPatchToggle.isChecked
                 )
                 updateStatus()
             }
@@ -64,10 +67,16 @@ class MainActivity : AppCompatActivity() {
                 PreferencesHelper.saveModuleConfig(
                     this, 
                     if (versionNameToggle.isChecked) versionNameEdit.text.toString() else "", 
-                    ""
+                    "",
+                    spotifyPatchToggle.isChecked
                 )
                 updateStatus()
             }
+        }
+        
+        spotifyPatchToggle.setOnCheckedChangeListener { _, isChecked ->
+            saveSpotifyPatchConfig(isChecked)
+            updateStatus()
         }
     }
     
@@ -89,6 +98,11 @@ class MainActivity : AppCompatActivity() {
             versionCodeToggle.isChecked = false
         }
         
+        spotifyPatchToggle.isChecked = config.spotifyPatchEnabled
+        
+        // Aggiorna lo stato di abilitazione dei toggle
+        updateToggleStates()
+        
         // Aggiorna lo stato iniziale
         updateStatus()
     }
@@ -98,12 +112,18 @@ class MainActivity : AppCompatActivity() {
             val versionName = versionNameEdit.text.toString().trim()
             val isValid = versionName.isEmpty() || versionNamePattern.matcher(versionName).matches()
             
+            // Aggiorna lo stato di abilitazione del toggle
+            updateVersionNameToggleState()
+            
             if (versionNameToggle.isChecked && isValid) {
                 validateAndSaveVersionName()
             }
         } else {
             val versionCode = versionCodeEdit.text.toString().trim()
             val isValid = versionCode.isEmpty() || versionCodePattern.matcher(versionCode).matches()
+            
+            // Aggiorna lo stato di abilitazione del toggle
+            updateVersionCodeToggleState()
             
             if (versionCodeToggle.isChecked && isValid) {
                 validateAndSaveVersionCode()
@@ -124,7 +144,8 @@ class MainActivity : AppCompatActivity() {
         PreferencesHelper.saveModuleConfig(
             this, 
             versionName, 
-            if (versionCodeToggle.isChecked) versionCodeEdit.text.toString() else ""
+            if (versionCodeToggle.isChecked) versionCodeEdit.text.toString() else "",
+            spotifyPatchToggle.isChecked
         )
         updateStatus()
     }
@@ -142,9 +163,19 @@ class MainActivity : AppCompatActivity() {
         PreferencesHelper.saveModuleConfig(
             this, 
             if (versionNameToggle.isChecked) versionNameEdit.text.toString() else "", 
-            versionCode
+            versionCode,
+            spotifyPatchToggle.isChecked
         )
         updateStatus()
+    }
+    
+    private fun saveSpotifyPatchConfig(enabled: Boolean) {
+        PreferencesHelper.saveModuleConfig(
+            this,
+            if (versionNameToggle.isChecked) versionNameEdit.text.toString() else "",
+            if (versionCodeToggle.isChecked) versionCodeEdit.text.toString() else "",
+            enabled
+        )
     }
     
     private fun updateStatus() {
@@ -177,7 +208,43 @@ class MainActivity : AppCompatActivity() {
             statusMessage.append("ℹ️ VersionCode originale non verrà modificato\n\n")
         }
         
+        // Stato per Spotify Premium
+        if (spotifyPatchToggle.isChecked) {
+            statusMessage.append("✓ Spotify Premium sbloccato\n\n")
+        } else {
+            statusMessage.append("ℹ️ Spotify Premium non modificato\n\n")
+        }
+        
         statusText.text = statusMessage.toString().trim()
+        
+        // Aggiorna lo stato di abilitazione dei toggle dopo aver aggiornato lo stato
+        updateToggleStates()
+    }
+    
+    /**
+     * Aggiorna lo stato di abilitazione di entrambi i toggle button
+     */
+    private fun updateToggleStates() {
+        updateVersionNameToggleState()
+        updateVersionCodeToggleState()
+    }
+    
+    /**
+     * Aggiorna lo stato di abilitazione del toggle di versionName
+     */
+    private fun updateVersionNameToggleState() {
+        val versionName = versionNameEdit.text.toString().trim()
+        val isValid = !versionName.isEmpty() && versionNamePattern.matcher(versionName).matches()
+        versionNameToggle.isEnabled = isValid
+    }
+    
+    /**
+     * Aggiorna lo stato di abilitazione del toggle di versionCode
+     */
+    private fun updateVersionCodeToggleState() {
+        val versionCode = versionCodeEdit.text.toString().trim()
+        val isValid = !versionCode.isEmpty() && versionCodePattern.matcher(versionCode).matches()
+        versionCodeToggle.isEnabled = isValid
     }
     
     // Helper per creare TextWatcher
