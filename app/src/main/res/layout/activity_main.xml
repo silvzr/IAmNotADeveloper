@@ -23,68 +23,54 @@
         android:gravity="center"
         android:layout_marginBottom="24dp"/>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Modulo attivo"
-            android:textSize="16sp"
-            android:layout_gravity="center_vertical"/>
-
-        <Switch
-            android:id="@+id/moduleSwitch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"/>
-    </LinearLayout>
-
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Version Name"
-        android:textSize="14sp"
-        android:layout_marginTop="16dp"/>
+        android:text="Version Name (formato: X.Y.ZZ.AAA)"
+        android:textSize="14sp"/>
 
     <EditText
         android:id="@+id/versionNameEdit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="es. 2.0.0"
+        android:hint="es. 9.0.33.782"
         android:inputType="text"
         android:layout_marginBottom="16dp"/>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Version Code"
+        android:text="Version Code (esattamente 9 cifre)"
         android:textSize="14sp"/>
 
     <EditText
         android:id="@+id/versionCodeEdit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="es. 200"
+        android:hint="es. 123456789"
         android:inputType="number"
         android:layout_marginBottom="24dp"/>
 
-    <Button
-        android:id="@+id/saveButton"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Salva Configurazione"/>
+        android:layout_height="0dp"
+        android:layout_weight="1">
+        
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="14sp"
+            android:padding="8dp"/>
+    </ScrollView>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Nota: assicurati di aver selezionato le app target nel manager Xposed e di aver riavviato le app dopo aver modificato la configurazione."
         android:textSize="12sp"
-        android:layout_marginTop="24dp"
-        android:gravity="center"/>
+        android:gravity="center"
+        android:layout_marginTop="16dp"/>
 
 </LinearLayout>

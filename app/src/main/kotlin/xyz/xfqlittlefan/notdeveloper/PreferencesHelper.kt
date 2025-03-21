@@ -3,6 +3,7 @@ package xyz.xfqlittlefan.notdeveloper
 import android.content.Context
 import android.content.SharedPreferences
 import de.robv.android.xposed.XSharedPreferences
+import java.io.File
 
 object PreferencesHelper {
     
@@ -11,7 +12,7 @@ object PreferencesHelper {
     // Per ottenere le preferenze dal contesto Xposed
     fun getXSharedPreferences(): XSharedPreferences {
         val prefs = XSharedPreferences("xyz.xfqlittlefan.notdeveloper", PREFERENCES_FILE)
-        prefs.makeWorldReadable()
+	prefs.makeWorldReadable()
         return prefs
     }
     
@@ -20,11 +21,10 @@ object PreferencesHelper {
         return context.getSharedPreferences(PREFERENCES_FILE, Context.MODE_WORLD_READABLE)
     }
     
-    // Salva la configurazione del modulo
-    fun saveModuleConfig(context: Context, enabled: Boolean, versionName: String, versionCode: String) {
+    // Salva la configurazione del modulo e rende il file accessibile
+    fun saveModuleConfig(context: Context, versionName: String, versionCode: String) {
         val prefs = getAppPreferences(context)
         prefs.edit().apply {
-            putBoolean("module_enabled", enabled)
             putString("version_name", versionName)
             putString("version_code", versionCode)
             apply()
@@ -35,7 +35,6 @@ object PreferencesHelper {
     fun getModuleConfig(context: Context): ModuleConfig {
         val prefs = getAppPreferences(context)
         return ModuleConfig(
-            enabled = prefs.getBoolean("module_enabled", true),
             versionName = prefs.getString("version_name", "") ?: "",
             versionCode = prefs.getString("version_code", "") ?: ""
         )
@@ -43,7 +42,6 @@ object PreferencesHelper {
     
     // Classe dati per la configurazione
     data class ModuleConfig(
-        val enabled: Boolean,
         val versionName: String,
         val versionCode: String
     )
