@@ -5,6 +5,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import java.util.regex.Pattern
 
@@ -12,6 +13,8 @@ class MainActivity : AppCompatActivity() {
     
     private lateinit var versionNameEdit: EditText
     private lateinit var versionCodeEdit: EditText
+    private lateinit var versionNameToggle: ToggleButton
+    private lateinit var versionCodeToggle: ToggleButton
     private lateinit var statusText: TextView
     
     // Pattern per validare il versionName: X.Y.ZZ.AAA
@@ -27,14 +30,45 @@ class MainActivity : AppCompatActivity() {
         // Inizializza le views
         versionNameEdit = findViewById(R.id.versionNameEdit)
         versionCodeEdit = findViewById(R.id.versionCodeEdit)
+        versionNameToggle = findViewById(R.id.versionNameToggle)
+        versionCodeToggle = findViewById(R.id.versionCodeToggle)
         statusText = findViewById(R.id.statusText)
         
         // Carica la configurazione salvata
         loadSavedConfig()
         
-        // Aggiungi TextWatcher per salvare automaticamente quando i valori cambiano
-        versionNameEdit.addTextChangedListener(createTextWatcher { validateAndSave() })
-        versionCodeEdit.addTextChangedListener(createTextWatcher { validateAndSave() })
+        // Aggiungi TextWatcher per validare quando i valori cambiano
+        versionNameEdit.addTextChangedListener(createTextWatcher { validateField(true) })
+        versionCodeEdit.addTextChangedListener(createTextWatcher { validateField(false) })
+        
+        // Aggiungi listener per i toggle button
+        versionNameToggle.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                validateAndSaveVersionName()
+            } else {
+                // Disattiva lo spoofing per versionName
+                PreferencesHelper.saveModuleConfig(
+                    this, 
+                    "", 
+                    if (versionCodeToggle.isChecked) versionCodeEdit.text.toString() else ""
+                )
+                updateStatus()
+            }
+        }
+        
+        versionCodeToggle.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                validateAndSaveVersionCode()
+            } else {
+                // Disattiva lo spoofing per versionCode
+                PreferencesHelper.saveModuleConfig(
+                    this, 
+                    if (versionNameToggle.isChecked) versionNameEdit.text.toString() else "", 
+                    ""
+                )
+                updateStatus()
+            }
+        }
     }
     
     private fun loadSavedConfig() {
@@ -43,83 +77,104 @@ class MainActivity : AppCompatActivity() {
         // Imposta i valori salvati
         if (config.versionName.isNotEmpty()) {
             versionNameEdit.setText(config.versionName)
+            versionNameToggle.isChecked = true
+        } else {
+            versionNameToggle.isChecked = false
         }
         
         if (config.versionCode.isNotEmpty()) {
             versionCodeEdit.setText(config.versionCode)
+            versionCodeToggle.isChecked = true
+        } else {
+            versionCodeToggle.isChecked = false
         }
         
         // Aggiorna lo stato iniziale
-        validateAndSave(false)
+        updateStatus()
     }
     
-    private fun validateAndSave(saveValues: Boolean = true) {
+    private fun validateField(isVersionName: Boolean) {
+        if (isVersionName) {
+            val versionName = versionNameEdit.text.toString().trim()
+            val isValid = versionName.isEmpty() || versionNamePattern.matcher(versionName).matches()
+            
+            if (versionNameToggle.isChecked && isValid) {
+                validateAndSaveVersionName()
+            }
+        } else {
+            val versionCode = versionCodeEdit.text.toString().trim()
+            val isValid = versionCode.isEmpty() || versionCodePattern.matcher(versionCode).matches()
+            
+            if (versionCodeToggle.isChecked && isValid) {
+                validateAndSaveVersionCode()
+            }
+        }
+    }
+    
+    private fun validateAndSaveVersionName() {
+        val versionName = versionNameEdit.text.toString().trim()
+        
+        if (versionName.isEmpty() || !versionNamePattern.matcher(versionName).matches()) {
+            versionNameToggle.isChecked = false
+            updateStatus()
+            return
+        }
+        
+        // Salva la configurazione
+        PreferencesHelper.saveModuleConfig(
+            this, 
+            versionName, 
+            if (versionCodeToggle.isChecked) versionCodeEdit.text.toString() else ""
+        )
+        updateStatus()
+    }
+    
+    private fun validateAndSaveVersionCode() {
+        val versionCode = versionCodeEdit.text.toString().trim()
+        
+        if (versionCode.isEmpty() || !versionCodePattern.matcher(versionCode).matches()) {
+            versionCodeToggle.isChecked = false
+            updateStatus()
+            return
+        }
+        
+        // Salva la configurazione
+        PreferencesHelper.saveModuleConfig(
+            this, 
+            if (versionNameToggle.isChecked) versionNameEdit.text.toString() else "", 
+            versionCode
+        )
+        updateStatus()
+    }
+    
+    private fun updateStatus() {
         val versionName = versionNameEdit.text.toString().trim()
         val versionCode = versionCodeEdit.text.toString().trim()
         
         val statusMessage = StringBuilder()
         
-        // Validazione e notifica per versionName
-        val isVersionNameValid = versionName.isNotEmpty() && versionNamePattern.matcher(versionName).matches()
-        if (versionName.isNotEmpty() && !isVersionNameValid) {
-            statusMessage.append("Version Name non valido. Formato richiesto: X.Y.ZZ.AAA (es. 9.0.33.782)\n")
-            statusMessage.append("Il version name originale dell'app non verrà modificato.\n\n")
-        }
-        
-        // Validazione e notifica per versionCode
-        val isVersionCodeValid = versionCode.isNotEmpty() && versionCodePattern.matcher(versionCode).matches()
-        if (versionCode.isNotEmpty() && !isVersionCodeValid) {
-            statusMessage.append("Version Code non valido. Deve avere esattamente 9 cifre.\n")
-            statusMessage.append("Il version code originale dell'app non verrà modificato.\n\n")
-        }
-        
-        // Controllo se almeno uno dei due valori è valido
-        val isAnyValueValid = isVersionNameValid || isVersionCodeValid
-        
-        // Aggiorna il testo di stato
-        if (isAnyValueValid) {
-            // Aggiungi i dettagli sui valori che saranno applicati
-            if (statusMessage.isNotEmpty()) {
-                // Ci sono alcuni valori non validi, ma almeno uno valido
-                statusMessage.append("Valori che saranno applicati:\n")
-                if (isVersionNameValid) {
-                    statusMessage.append("- Version Name: $versionName\n")
-                }
-                if (isVersionCodeValid) {
-                    statusMessage.append("- Version Code: $versionCode\n")
-                }
-                statusText.setTextColor(resources.getColor(android.R.color.holo_orange_dark))
+        // Stato per versionName
+        if (versionNameToggle.isChecked) {
+            if (versionNamePattern.matcher(versionName).matches()) {
+                statusMessage.append("✓ VersionName verrà impostato a: $versionName\n\n")
             } else {
-                // Tutti i valori specificati sono validi
-                statusMessage.append("Configurazione valida e salvata.\n")
-                if (isVersionNameValid) {
-                    statusMessage.append("- Version Name: $versionName\n")
-                }
-                if (isVersionCodeValid) {
-                    statusMessage.append("- Version Code: $versionCode\n")
-                }
-                statusText.setTextColor(resources.getColor(android.R.color.holo_green_dark))
+                statusMessage.append("❌ VersionName non valido. Formato richiesto: X.Y.ZZ.AAA\n\n")
+                versionNameToggle.isChecked = false
             }
-            
-            // Salva i valori (anche quelli non validi - il modulo Xposed farà la validazione)
-            if (saveValues) {
-                // Correzione: passaggio corretto dei parametri
-                PreferencesHelper.saveModuleConfig(this, versionName, versionCode)
-            }
-        } else if (versionName.isEmpty() && versionCode.isEmpty()) {
-            // Nessun valore specificato
-            statusMessage.append("Specifica almeno un valore tra Version Name e Version Code")
-            statusText.setTextColor(resources.getColor(android.R.color.holo_red_dark))
         } else {
-            // Entrambi i valori specificati ma non validi
-            statusMessage.append("Nessun valore valido specificato. Le app manterranno i loro valori originali.")
-            statusText.setTextColor(resources.getColor(android.R.color.holo_red_dark))
-            
-            // Salva comunque i valori (il modulo Xposed non li applicherà)
-            if (saveValues) {
-                // Correzione: passaggio corretto dei parametri
-                PreferencesHelper.saveModuleConfig(this, versionName, versionCode)
+            statusMessage.append("ℹ️ VersionName originale non verrà modificato\n\n")
+        }
+        
+        // Stato per versionCode
+        if (versionCodeToggle.isChecked) {
+            if (versionCodePattern.matcher(versionCode).matches()) {
+                statusMessage.append("✓ VersionCode verrà impostato a: $versionCode\n\n")
+            } else {
+                statusMessage.append("❌ VersionCode non valido. Deve avere esattamente 9 cifre\n\n")
+                versionCodeToggle.isChecked = false
             }
+        } else {
+            statusMessage.append("ℹ️ VersionCode originale non verrà modificato\n\n")
         }
         
         statusText.text = statusMessage.toString().trim()
