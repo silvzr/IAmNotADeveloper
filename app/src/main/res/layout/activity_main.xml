@@ -11,19 +11,12 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Configurazione Spoofer di Versione"
+        android:text="SpoTweaker"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
-        android:gravity="center"
-        android:layout_marginBottom="24dp"/>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Questa configurazione sarà applicata a tutte le app selezionate nel manager Xposed"
-        android:textColor="#FFFFFF"
-        android:gravity="center"
+        android:gravity="left"
+	android:layout_marginTop="-4dp"
         android:layout_marginBottom="24dp"/>
 
     <!-- Version Name Row -->
@@ -39,26 +32,32 @@
             android:layout_height="wrap_content"
             android:text="Spoof versionName"
             android:textColor="#FFFFFF"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:layout_marginEnd="8dp"/>
 
-        <EditText
-            android:id="@+id/versionNameEdit"
+    	<Space
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="es. 9.0.33.782"
-            android:textColorHint="#808080"
-            android:textColor="#FFFFFF"
-            android:background="#292929"
-            android:padding="12dp"
-            android:inputType="text"
-            android:layout_marginEnd="8dp"/>
+            android:layout_weight="1" />
+
+	<EditText
+    	    android:id="@+id/versionNameEdit"
+    	    android:layout_width="wrap_content"
+    	    android:layout_height="wrap_content"
+    	    android:layout_gravity="end"
+    	    android:hint="9.0.33.782"
+	    android:textSize="15sp"
+    	    android:textColorHint="#808080"
+    	    android:textColor="#FFFFFF"
+    	    android:background="@drawable/rounded_edittext_background"
+    	    android:inputType="text"
+    	    android:layout_marginEnd="8dp"/>
 
         <ToggleButton
             android:id="@+id/versionNameToggle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+	    android:layout_gravity="center_vertical"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
             android:background="@drawable/toggle_selector"
             android:textOn=""
             android:textOff=""/>
@@ -77,26 +76,32 @@
             android:layout_height="wrap_content"
             android:text="Spoof versionCode"
             android:textColor="#FFFFFF"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:layout_marginEnd="8dp"/>
 
-        <EditText
-            android:id="@+id/versionCodeEdit"
+    	<Space
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="es. 123456789"
-            android:textColorHint="#808080"
-            android:textColor="#FFFFFF"
-            android:background="#292929"
-            android:padding="12dp"
-            android:inputType="number"
-            android:layout_marginEnd="8dp"/>
+            android:layout_weight="1" />
+
+	<EditText
+    	    android:id="@+id/versionCodeEdit"
+    	    android:layout_width="wrap_content"
+    	    android:layout_height="wrap_content"
+    	    android:layout_gravity="end"
+    	    android:hint="123456789"
+	    android:textSize="15sp"
+    	    android:textColorHint="#808080" 
+    	    android:textColor="#FFFFFF"
+    	    android:background="@drawable/rounded_edittext_background"
+    	    android:inputType="number"
+    	    android:layout_marginEnd="8dp"/>
 
         <ToggleButton
             android:id="@+id/versionCodeToggle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+	    android:layout_gravity="center_vertical"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
             android:background="@drawable/toggle_selector"
             android:textOn=""
             android:textOff=""/>
@@ -116,14 +121,5 @@
             android:textSize="14sp"
             android:padding="8dp"/>
     </ScrollView>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Nota: assicurati di aver selezionato le app target nel manager Xposed e di aver riavviato le app dopo aver modificato la configurazione."
-        android:textColor="#AAAAAA"
-        android:textSize="12sp"
-        android:gravity="center"
-        android:layout_marginTop="16dp"/>
 
 </LinearLayout>
